@@ -1,0 +1,77 @@
+
+body{
+    background-color: rgb(255, 255, 255);
+}
+
+#boards-container{
+    display: flex;
+    justify-content: space-around;
+}
+
+.game-board{
+    width: 400px;
+    height: 400px;
+    display: flex;
+    flex-wrap: wrap;
+}
+
+.tile{
+    width: 38px; 
+    height: 38px;
+    border: solid 1px black;
+}
+
+.ships-container{
+    width: 800px;
+    height: 200px;
+    margin: 30px 0;
+    background-color: lightblue;
+    display: flex;
+    align-items: center;
+}
+
+.small{
+    background-color: blueviolet;
+}
+
+.medium{
+    background-color: rgb(43, 147, 226);
+}
+
+.large{
+    background-color: rgb(226, 43, 141);
+}
+
+.destroyer{
+    background-color: rgb(226, 242, 9);
+}
+
+.small-preview{
+    width: 40px;
+    height: 40px;
+    margin: 3px;
+}
+
+.medium-preview{
+    width: 80px;
+    height: 40px;
+    margin: 3px;
+}
+
+.large-preview{
+    width: 120px;
+    height: 40px;
+    margin: 3px;
+}
+
+.destroyer-preview{
+    width: 160px;
+    height: 40px;
+    margin: 3px;
+}
+
+#battleshipCanvas{
+    margin: 0;
+    padding: 0;
+    border: 0;
+}
