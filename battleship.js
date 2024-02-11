@@ -155,10 +155,51 @@ function dropShip(e){
 const startBttn = document.querySelector('#start-button')
 const infoDisplay = document.querySelector('#info')
 const turnDisplay = document.querySelector('#turn-display')
-let playerHits = []
-let computerHits = []
 let gameOver = false
 let playerTurn
+
+let playerHits = []
+let computerHits = []
+
+let playerDownedShips = []
+let computerDownedShips = []
+
+function winCondition(user){
+    if(gameOver){
+        if (user === 'player'){
+            turnDisplay.textContent = "Game Over!!"
+            infoDisplay.textContent = "You have won! :)"
+        }
+        else if (user === 'computer'){
+            turnDisplay.textContent = "Game Over!!"
+            infoDisplay.textContent = "The enemy have won! :("
+        } 
+    }
+}
+
+function checkScoreCondition(userHits, user){
+    //Evaluate all the ships that have been downed
+    ships.forEach(ship =>{
+        if(userHits.filter(shipHit => shipHit === ship.name).length === ship.length){
+            //remove the ship in the userHit array and add that ship to the downedShips array
+            if (user === 'player'){
+                infoDisplay.textContent = "You have downed the enemy's ship name: " + ship.name
+                playerDownedShips.push(ship.name)
+                playerHits = userHits.filter(shipHit => shipHit !== ship.name)
+                gameOver = playerDownedShips.length === 8 ? true : false
+            }
+            else if (user === 'computer'){
+                infoDisplay.textContent = "The enemy have downed your ship named: " + ship.name
+                computerDownedShips.push(ship.name)
+                computerHits = userHits.filter(shipHit => shipHit !== ship.name)
+                gameOver = computerDownedShips.length === 8 ? true : false
+            }
+        }
+    })
+
+    //Check condition for game over
+    winCondition(user)
+}
 
 function startGame(){
     if (shipsContainer.children.length != 0){
@@ -174,28 +215,32 @@ function startGame(){
 startBttn.addEventListener('click', startGame)
 
 
+const classToFilterOut = ['taken', 'hit', 'tile']
+//Handle Player's turn
 function playerClick(e){
     if (!gameOver){
+        //If Player hits an already hit tile, then go again
         if(e.target.classList.contains('missed') || e.target.classList.contains('hit')){
-            infoDisplay.textContent = 'Invalid bomb placement! Try a different spot.'
+            infoDisplay.textContent = 'Invalid bomb placement! Try a different tile.'
             playerClick()
             return
         }
+        //If player hits a ship then add hit class to tile selected, check score and go again
         else if (e.target.classList.contains('taken')){
             e.target.classList.add('hit')
             e.target.style.backgroundColor = 'black'
             infoDisplay.textContent = 'That is a hit!'
 
+            //Get the name of the ship hit
             let classes = Array.from(e.target.classList)
-            classes = classes.filter(className => className !== 'taken')
-            classes = classes.filter(className => className !== 'hit')
-            classes = classes.filter(className => className !== 'tile')
+            classes = classes.filter(className => !classToFilterOut.includes(className))
             playerHits.push(...classes)
-            console.log(playerHits)
 
+            checkScoreCondition(playerHits, 'player')
             playerClick()
             return
         }
+        //If player misses, keep track of selected tile
         else if (!e.target.classList.contains('taken')){
             infoDisplay.textContent = 'You missed this time'
             e.target.classList.add('missed')
@@ -208,53 +253,53 @@ function playerClick(e){
 }
 
 
+//Handle Computer's turn
 function computerTurn(){
-    console.log("before")
     turnDisplay.textContent = "Computer's turn! Waiting..."
-
     if(!gameOver){
-     
         setTimeout(()=>{
         let computerAttack = Math.floor(Math.random() * width * width)
         const playerBoardTiles = document.querySelectorAll('#player div')
 
+        //If computer hits an already hit tile then go again
         if(playerBoardTiles[computerAttack].classList.contains('hit') ||
             playerBoardTiles[computerAttack].classList.contains('missed')) 
-        { //If computer hits an already hit tile then go again
+        { 
             computerTurn()
             return
 
         }
+        //If computer hits a battleship then add hit class to tile, check score and go again
         else if(playerBoardTiles[computerAttack].classList.contains('taken') &&
             !playerBoardTiles[computerAttack].classList.contains('hit'))
-        { //If computer hits a battleship then add hit to the tile and go again
+        { 
             playerBoardTiles[computerAttack].classList.add('hit')
             playerBoardTiles[computerAttack].style.backgroundColor = 'black'
             infoDisplay.textContent = 'Your ship has been hit!'
 
+            //Get the name of the ship hit
             let classes = Array.from(playerBoardTiles[computerAttack].classList)
-            classes = classes.filter(className => className !== 'taken')
-            classes = classes.filter(className => className !== 'hit')
-            classes = classes.filter(className => className !== 'tile')
+            classes = classes.filter(className => !classToFilterOut.includes(className))
             computerHits.push(...classes)
-            console.log(computerHits)
 
+            checkScoreCondition(computerHits, 'computer')
             computerTurn()
             return
     
         } 
+        //if computer misses keep track of tile selected
         else if(!playerBoardTiles[computerAttack].classList.contains('taken')) {
             infoDisplay.textContent = 'The computer missed!'
             playerBoardTiles[computerAttack].classList.add('missed')
         }
         }, 1000)
         
-        setTimeout(()=>{
+       setTimeout(()=>{
             playerTurn = true
-            turnDisplay.textContent = 'Your turn!'
+            turnDisplay.textContent = ''
             const compBoardTiles = document.querySelectorAll('#computer div')
             compBoardTiles.forEach(tile => tile.addEventListener('click', playerClick))
-        }, 2000)
+       }, 1500)
        
     }
 }
