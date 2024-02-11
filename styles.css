@@ -3,6 +3,16 @@ body{
     background-color: rgb(255, 255, 255);
 }
 
+
+.missed{
+    background-color: white;
+}
+
+#game-info{
+    position: absolute;
+    left: 45%;
+}
+
 #boards-container{
     display: flex;
     justify-content: space-around;
@@ -30,15 +40,15 @@ body{
     align-items: center;
 }
 
-.small{
+.small-1, .small-2, .small-3{
     background-color: blueviolet;
 }
 
-.medium{
+.medium-1, .medium-2{
     background-color: rgb(43, 147, 226);
 }
 
-.large{
+.large-1, .large-2{
     background-color: rgb(226, 43, 141);
 }
 
