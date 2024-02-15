@@ -1,6 +1,10 @@
 const shipsContainer = document.querySelector('.ships-container')
 const flipBttn = document.querySelector('#flip-button')
+const resetBttn = document.querySelector('#reset-button')
 const boardsContainer = document.querySelector('#boards-container')
+const startBttn = document.querySelector('#start-button')
+const infoDisplay = document.querySelector('#info')
+const turnDisplay = document.querySelector('#turn-display')
 
 
 //Create game board
@@ -151,18 +155,33 @@ function dropShip(e){
     }
 }
 
+let gameStart = false
+function resetBoard(){
+    const playerBoardTiles = document.querySelectorAll('#player div')
+    if(!gameStart){ //If the game has not started yet, then reset the board
+        playerBoardTiles.forEach(tile => {
+            for(let i = 0; i < ships.length; i++){
+                if(tile.classList.contains(ships[i].name)){
+                    tile.classList.remove(ships[i].name)
+                    tile.classList.remove('taken')
+                }
+            }
+        })
+        //TODO: Re add the ships into the ships-container
+    }
+}
 
-const startBttn = document.querySelector('#start-button')
-const infoDisplay = document.querySelector('#info')
-const turnDisplay = document.querySelector('#turn-display')
+resetBttn.addEventListener('click', resetBoard)
+
+
 let gameOver = false
 let playerTurn
 
 let playerHits = []
 let computerHits = []
 
-let playerDownedShips = []
-let computerDownedShips = []
+let playerDownedShips = [] //Ships the player has destroyed from the enemy's board
+let computerDownedShips = [] //Ships the computer has destroyed from the player's board
 
 function winCondition(user){
     if(gameOver){
@@ -174,6 +193,31 @@ function winCondition(user){
             turnDisplay.textContent = "Game Over!!"
             infoDisplay.textContent = "The enemy have won! :("
         } 
+    }
+}
+
+function idicateDownedShips(user){
+    if(user === 'player'){
+        const compBoardTiles = document.querySelectorAll('#computer div')
+        for(let i = 0; i < playerDownedShips.length; i++){
+            console.log('inside')
+            compBoardTiles.forEach(tile => {
+                if(tile.classList.contains(playerDownedShips[i])){
+                    tile.style.backgroundColor = 'black'
+                }
+            })
+        }
+    }
+    else if(user === 'computer'){
+        const playerBoardTiles = document.querySelectorAll('#player div')
+        for(let i = 0; i < computerDownedShips.length; i++){
+            console.log('inside')
+            playerBoardTiles.forEach(tile => {
+                if(tile.classList.contains(computerDownedShips[i])){
+                    tile.style.backgroundColor = 'black'
+                }
+            })
+        }
     }
 }
 
@@ -209,7 +253,8 @@ function startGame(){
        compBoardTiles.forEach(tile => tile.addEventListener('click', playerClick))
        infoDisplay.textContent = 'Begin!'
        turnDisplay.textContent = "Your turn!"
-       startBttn.replaceWith(startBttn.cloneNode(true))
+       startBttn.replaceWith(startBttn.cloneNode(true)) //Remove event listener
+       gameStart = true
     }
 }
 startBttn.addEventListener('click', startGame)
@@ -228,7 +273,7 @@ function playerClick(e){
         //If player hits a ship then add hit class to tile selected, check score and go again
         else if (e.target.classList.contains('taken')){
             e.target.classList.add('hit')
-            e.target.style.backgroundColor = 'black'
+            e.target.style.backgroundColor = 'red'
             infoDisplay.textContent = 'That is a hit!'
 
             //Get the name of the ship hit
@@ -237,6 +282,7 @@ function playerClick(e){
             playerHits.push(...classes)
 
             checkScoreCondition(playerHits, 'player')
+            idicateDownedShips('player')
             playerClick()
             return
         }
@@ -274,7 +320,7 @@ function computerTurn(){
             !playerBoardTiles[computerAttack].classList.contains('hit'))
         { 
             playerBoardTiles[computerAttack].classList.add('hit')
-            playerBoardTiles[computerAttack].style.backgroundColor = 'black'
+            playerBoardTiles[computerAttack].style.backgroundColor = 'red'
             infoDisplay.textContent = 'Your ship has been hit!'
 
             //Get the name of the ship hit
@@ -283,6 +329,7 @@ function computerTurn(){
             computerHits.push(...classes)
 
             checkScoreCondition(computerHits, 'computer')
+            idicateDownedShips('computer')
             computerTurn()
             return
     
