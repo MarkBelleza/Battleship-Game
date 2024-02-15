@@ -6,6 +6,27 @@ const startBttn = document.querySelector('#start-button')
 const infoDisplay = document.querySelector('#info')
 const turnDisplay = document.querySelector('#turn-display')
 
+//Create Ships Class
+class Ship{
+    constructor(name, length){
+        this.name = name
+        this.length = length
+    }
+}
+
+const boat1 = new Ship('small-1', 1)
+const boat2 = new Ship('small-2', 1)
+const boat3 = new Ship('small-3', 1)
+const ship1 = new Ship('medium-1', 2)
+const ship2 = new Ship('medium-2', 2)
+const submarine1 = new Ship('large-1', 3)
+const submarine2 = new Ship('large-2', 3)
+const navy = new Ship('destroyer', 4)
+
+const ships = [boat1, boat2, boat3, 
+    ship1, ship2, 
+    submarine1, submarine2, 
+    navy]
 
 //Create game board
 const width = 10
@@ -30,6 +51,56 @@ function createBoard(user){
 createBoard('player')
 createBoard('computer')
 
+function createDraggableShips(){
+    //Create ship elements
+    for(let i = 0; i < ships.length; i++){
+        const ship = document.createElement('div')
+        ship.classList.add(ships[i].name)
+        ship.id = `${i}`
+        ship.draggable = true
+        if(i < 3){
+            ship.classList.add('small-preview')
+        }
+        else if (i < 5 && i > 2){
+            ship.classList.add('medium-preview')
+        }
+        else if (i < 7 && i > 4){
+            ship.classList.add('large-preview')
+        }
+        else{
+            ship.classList.add('destroyer-preview')
+        }
+        shipsContainer.append(ship)
+    }
+    //Add event listeners to the ships to be draggable
+    const playerShips = Array.from(shipsContainer.children)
+    const playerBoardTiles = document.querySelectorAll('#player div')
+
+    playerShips.forEach(ship => ship.addEventListener('dragstart', dragStart))
+    playerBoardTiles.forEach(tile =>{
+    tile.addEventListener('dragover', dragOver)
+    tile.addEventListener('drop', dropShip)
+})
+}
+createDraggableShips()
+
+function dragStart(e){
+    notDropped = false
+    draggedShip = e.target
+}
+
+function dragOver(e){
+    e.preventDefault()
+}
+
+function dropShip(e){
+    const startPoint = e.target.id
+    const ship = ships[draggedShip.id]
+    addShipPiece(ship, 'player', startPoint)
+    if (!notDropped){
+        draggedShip.remove()
+    }
+}
 
 //Flip button
 let angle = 0
@@ -40,29 +111,6 @@ function flip() {
 }
 flipBttn.addEventListener('click', flip)
 
-
-
-//Create Ships Class
-class Ship{
-    constructor(name, length){
-        this.name = name
-        this.length = length
-    }
-}
-
-const boat1 = new Ship('small-1', 1)
-const boat2 = new Ship('small-2', 1)
-const boat3 = new Ship('small-3', 1)
-const ship1 = new Ship('medium-1', 2)
-const ship2 = new Ship('medium-2', 2)
-const submarine1 = new Ship('large-1', 3)
-const submarine2 = new Ship('large-2', 3)
-const navy = new Ship('destroyer', 4)
-
-const ships = [boat1, boat2, boat3, 
-    ship1, ship2, 
-    submarine1, submarine2, 
-    navy]
 
 let notDropped
 //Adding Ships to both boards
@@ -126,34 +174,6 @@ ships.forEach(ship =>{
     addShipPiece(ship, 'computer')
 })
 
-// Drag ships in Player's board
-let draggedShip
-const playerShips = Array.from(shipsContainer.children)
-const playerBoardTiles = document.querySelectorAll('#player div')
-
-playerShips.forEach(ship => ship.addEventListener('dragstart', dragStart))
-playerBoardTiles.forEach(tile =>{
-    tile.addEventListener('dragover', dragOver)
-    tile.addEventListener('drop', dropShip)
-})
-
-function dragStart(e){
-    notDropped = false
-    draggedShip = e.target
-}
-
-function dragOver(e){
-    e.preventDefault()
-}
-
-function dropShip(e){
-    const startPoint = e.target.id
-    const ship = ships[draggedShip.id]
-    addShipPiece(ship, 'player', startPoint)
-    if (!notDropped){
-        draggedShip.remove()
-    }
-}
 
 let gameStart = false
 function resetBoard(){
@@ -167,7 +187,12 @@ function resetBoard(){
                 }
             }
         })
-        //TODO: Re add the ships into the ships-container
+
+        //Make sure no other ships are inside the ships container before adding new ships
+        while(shipsContainer.firstChild){
+            shipsContainer.removeChild(shipsContainer.firstChild)
+        }
+        createDraggableShips()
     }
 }
 
