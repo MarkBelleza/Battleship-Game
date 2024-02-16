@@ -5,6 +5,7 @@ const boardsContainer = document.querySelector('#boards-container')
 const startBttn = document.querySelector('#start-button')
 const infoDisplay = document.querySelector('#info')
 const turnDisplay = document.querySelector('#turn-display')
+const bttnContainer = document.querySelector('#buttons-container')
 
 //Create Ships Class
 class Ship{
@@ -169,7 +170,7 @@ function addShipPiece(ship, user, startPoint){
        if (user == 'player') notDropped = true
     }
 }
-
+//Initialize the ships in the computer board on the first visit of the web page
 ships.forEach(ship =>{
     addShipPiece(ship, 'computer')
 })
@@ -208,6 +209,47 @@ let computerHits = []
 let playerDownedShips = [] //Ships the player has destroyed from the enemy's board
 let computerDownedShips = [] //Ships the computer has destroyed from the player's board
 
+function resetGame(){
+    playerHits = []
+    computerHits = []
+    playerDownedShips = []
+    computerDownedShips = []
+
+    gameOver = false
+    gameStart = false
+
+
+    //Delete and re create computer and player boards
+    const computerBoard = boardsContainer.querySelector('#computer')
+    const playerBoard = boardsContainer.querySelector('#player')
+    boardsContainer.removeChild(computerBoard)
+    boardsContainer.removeChild(playerBoard)
+    createBoard('player')
+    createBoard('computer')
+
+    //Populate computer board with ships and provide player with draggable ships
+    resetBoard()
+    ships.forEach(ship =>{
+        addShipPiece(ship, 'computer')
+    })
+
+    //Delete the play again button
+    const playBttn = document.querySelector('#replay-button')
+    bttnContainer.removeChild(playBttn)
+
+    turnDisplay.textContent = ""
+    infoDisplay.textContent = ""
+}
+
+function createPlayAgainBttn(){
+    const playBttn = document.createElement('button')
+    playBttn.id = 'replay-button'
+    playBttn.textContent = 'PLAY AGAIN'
+    bttnContainer.append(playBttn)
+
+    playBttn.addEventListener('click', resetGame)
+}
+
 function winCondition(user){
     if(gameOver){
         if (user === 'player'){
@@ -217,7 +259,9 @@ function winCondition(user){
         else if (user === 'computer'){
             turnDisplay.textContent = "Game Over!!"
             infoDisplay.textContent = "The enemy have won! :("
-        } 
+        }
+    
+        createPlayAgainBttn()
     }
 }
 
@@ -225,7 +269,6 @@ function idicateDownedShips(user){
     if(user === 'player'){
         const compBoardTiles = document.querySelectorAll('#computer div')
         for(let i = 0; i < playerDownedShips.length; i++){
-            console.log('inside')
             compBoardTiles.forEach(tile => {
                 if(tile.classList.contains(playerDownedShips[i])){
                     tile.style.backgroundColor = 'black'
@@ -236,7 +279,6 @@ function idicateDownedShips(user){
     else if(user === 'computer'){
         const playerBoardTiles = document.querySelectorAll('#player div')
         for(let i = 0; i < computerDownedShips.length; i++){
-            console.log('inside')
             playerBoardTiles.forEach(tile => {
                 if(tile.classList.contains(computerDownedShips[i])){
                     tile.style.backgroundColor = 'black'
@@ -271,15 +313,17 @@ function checkScoreCondition(userHits, user){
 }
 
 function startGame(){
-    if (shipsContainer.children.length != 0){
-        infoDisplay.textContent = 'Drop down your battleships!!'
-    } else{
-       const compBoardTiles =  document.querySelectorAll('#computer div')
-       compBoardTiles.forEach(tile => tile.addEventListener('click', playerClick))
-       infoDisplay.textContent = 'Begin!'
-       turnDisplay.textContent = "Your turn!"
-       startBttn.replaceWith(startBttn.cloneNode(true)) //Remove event listener
-       gameStart = true
+    if(!gameStart){
+        if (shipsContainer.children.length != 0){
+            infoDisplay.textContent = 'Drop down your battleships!!'
+        } else{
+            console.log('here')
+            const compBoardTiles =  document.querySelectorAll('#computer div')
+            compBoardTiles.forEach(tile => tile.addEventListener('click', playerClick))
+            infoDisplay.textContent = 'Begin!'
+            turnDisplay.textContent = "Your turn!"
+            gameStart = true
+        }
     }
 }
 startBttn.addEventListener('click', startGame)
