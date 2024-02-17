@@ -41,7 +41,6 @@ function createBoard(user){
     board.style.backgroundColor = 'grey'
     board.id = user
 
-
     //create the grid (100 tiles)
     for(let i = 0; i < 100; i++) {
         const tile = document.createElement('div')
@@ -55,6 +54,7 @@ function createBoard(user){
 }
 createBoard('player')
 createBoard('computer')
+
 
 function createDraggableShips(){
     //Create ship elements
@@ -85,18 +85,21 @@ function createDraggableShips(){
     playerBoardTiles.forEach(tile =>{
     tile.addEventListener('dragover', dragOver)
     tile.addEventListener('drop', dropShip)
-})
+    })
 }
 createDraggableShips()
+
 
 function dragStart(e){
     notDropped = false
     draggedShip = e.target
 }
 
+
 function dragOver(e){
     e.preventDefault()
 }
+
 
 function dropShip(e){
     const startPoint = e.target.id
@@ -106,6 +109,7 @@ function dropShip(e){
         draggedShip.remove()
     }
 }
+
 
 //Flip button
 let angle = 0
@@ -201,7 +205,6 @@ function resetBoard(){
         createDraggableShips()
     }
 }
-
 resetBttn.addEventListener('click', resetBoard)
 
 
@@ -227,6 +230,7 @@ let initialCountShipsComputer = {
     'Battleship' : 2,
     'Destroyer' : 1
 }
+
 function displayScore(user){
     if(user === 'player'){
         playerShipsLeft.textContent = `(${initialCountShipsPlayer['Cruiser']}) Cruiser  `
@@ -243,6 +247,7 @@ function displayScore(user){
 }
 displayScore('player')
 displayScore('computer')
+
 
 function resetGame(){
     angle = 0
@@ -261,14 +266,12 @@ function resetGame(){
         'Destroyer' : 1
     }
     
-
     initialCountShipsComputer = {
         'Cruiser' : 3,
         'Submarine' : 2,
         'Battleship' : 2,
         'Destroyer' : 1
     }
-
 
     //Delete and re create computer and player boards
     const computerBoard = boardsContainer.querySelector('#computer')
@@ -297,6 +300,7 @@ function resetGame(){
     computerBoardShipInvisible()
 }
 
+
 function createPlayAgainBttn(){
     const playBttn = document.createElement('button')
     playBttn.id = 'replay-button'
@@ -305,6 +309,7 @@ function createPlayAgainBttn(){
 
     playBttn.addEventListener('click', resetGame)
 }
+
 
 function winCondition(user){
     if(gameOver){
@@ -320,6 +325,7 @@ function winCondition(user){
         createPlayAgainBttn()
     }
 }
+
 
 function idicateDownedShips(user){
     if(user === 'player'){
@@ -344,6 +350,7 @@ function idicateDownedShips(user){
     }
 }
 
+
 function checkScoreCondition(userHits, user){
     //Evaluate all the ships that have been downed
     ships.forEach(ship =>{
@@ -365,10 +372,10 @@ function checkScoreCondition(userHits, user){
             }
         }
     })
-
     //Check condition for game over
     winCondition(user)
 }
+
 
 function startGame(){
     if(!gameStart){
@@ -488,7 +495,6 @@ function computerBoardShipInvisible(){
     const computerBoard = document.querySelectorAll('#computer div')
     computerBoard.forEach(tile =>tile.style.backgroundColor = 'grey')
 }
-
 computerBoardShipInvisible()
 
 
