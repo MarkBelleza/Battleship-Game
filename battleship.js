@@ -148,9 +148,9 @@ function addShipPiece(ship, user, startPoint){
         }
     }
 
-    let validPos
     //Make sure the ships are not being cut
     //Consider horizontal
+    let validPos
     if (isHorizontal){
         shipBlocks.every((shipBlock, index) => 
         validPos = shipBlocks[0].id % width !== width - (shipBlocks.length - (index + 1)))
@@ -294,6 +294,7 @@ function resetGame(){
     //Reset score
     displayScore('player')
     displayScore('computer')
+    computerBoardShipInvisible()
 }
 
 function createPlayAgainBttn(){
@@ -418,6 +419,7 @@ function playerClick(e){
         else if (!e.target.classList.contains('taken')){
             infoDisplay.textContent = 'You missed this time'
             e.target.classList.add('missed')
+            e.target.style.backgroundColor = 'white'
         }
         playerTurn = false
         const compBoardTiles = document.querySelectorAll('#computer div')
@@ -481,6 +483,13 @@ function computerTurn(){
     }
 }
 
+
+function computerBoardShipInvisible(){
+    const computerBoard = document.querySelectorAll('#computer div')
+    computerBoard.forEach(tile =>tile.style.backgroundColor = 'grey')
+}
+
+computerBoardShipInvisible()
 
 
 
