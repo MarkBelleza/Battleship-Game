@@ -250,11 +250,13 @@ displayScore('computer')
 
 
 function resetGame(){
+    //Reset all related variables
     angle = 0
     playerHits = []
     computerHits = []
     playerDownedShips = []
     computerDownedShips = []
+    gridNumberIndex = Array.from(Array(100).keys())
 
     gameOver = false
     gameStart = false
@@ -436,24 +438,18 @@ function playerClick(e){
 }
 
 
+let gridNumberIndex = Array.from(Array(100).keys())
 //Handle Computer's turn
 function computerTurn(){
     turnDisplay.textContent = "Computer's turn! Waiting..."
     if(!gameOver){
         setTimeout(()=>{
-        let computerAttack = Math.floor(Math.random() * width * width)
+        let randomIndex = Math.floor(Math.random() * gridNumberIndex.length)
+        let computerAttack = gridNumberIndex[randomIndex]
         const playerBoardTiles = document.querySelectorAll('#player div')
 
-        //If computer hits an already hit tile then go again
-        if(playerBoardTiles[computerAttack].classList.contains('hit') ||
-            playerBoardTiles[computerAttack].classList.contains('missed')) 
-        { 
-            computerTurn()
-            return
-
-        }
         //If computer hits a battleship then add hit class to tile, check score and go again
-        else if(playerBoardTiles[computerAttack].classList.contains('taken') &&
+        if(playerBoardTiles[computerAttack].classList.contains('taken') &&
             !playerBoardTiles[computerAttack].classList.contains('hit'))
         { 
             playerBoardTiles[computerAttack].classList.add('hit')
@@ -469,6 +465,7 @@ function computerTurn(){
             displayScore('player') //Update player score accordingly
 
             idicateDownedShips('computer')
+            gridNumberIndex = gridNumberIndex.filter(tile => tile !== computerAttack)
             computerTurn()
             return
     
@@ -477,16 +474,16 @@ function computerTurn(){
         else if(!playerBoardTiles[computerAttack].classList.contains('taken')) {
             infoDisplay.textContent = 'The computer missed!'
             playerBoardTiles[computerAttack].classList.add('missed')
+            gridNumberIndex = gridNumberIndex.filter(tile => tile !== computerAttack)
         }
         }, 1000)
         
-       setTimeout(()=>{
+        setTimeout(()=>{
             playerTurn = true
             turnDisplay.textContent = ''
             const compBoardTiles = document.querySelectorAll('#computer div')
             compBoardTiles.forEach(tile => tile.addEventListener('click', playerClick))
-       }, 1500)
-       
+        }, 1500)    
     }
 }
 
