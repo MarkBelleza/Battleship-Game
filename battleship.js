@@ -395,6 +395,30 @@ function startGame(){
 }
 startBttn.addEventListener('click', startGame)
 
+//Player's attacks counter
+let hitCountPlayer = 0
+let missCountPlayer = 0
+
+//Computer's attack counter
+let hitCountComputer = 0
+let missCountComputer = 0
+
+function displayHitMissStatus(user){
+    if (user === 'player'){
+        const playerHitCount = document.querySelector('#player-hit')
+        const playerMissCount = document.querySelector('#player-miss')
+
+        playerHitCount.textContent = hitCountPlayer
+        playerMissCount.textContent = missCountPlayer
+    }
+    else if (user === 'computer'){
+        const computerHitCount = document.querySelector('#computer-hit')
+        const computerMissCount = document.querySelector('#computer-miss')
+
+        computerHitCount.textContent = hitCountComputer
+        computerMissCount.textContent = missCountComputer
+    }
+}
 
 const classToFilterOut = ['taken', 'hit', 'tile']
 //Handle Player's turn
@@ -410,7 +434,7 @@ function playerClick(e){
         else if (e.target.classList.contains('taken')){
             e.target.classList.add('hit')
             e.target.style.backgroundColor = 'red'
-            infoDisplay.textContent = 'That is a hit!'
+            infoDisplay.textContent = 'That is a hit! Go Again!'
 
             //Get the name of the ship hit
             let classes = Array.from(e.target.classList)
@@ -419,6 +443,8 @@ function playerClick(e){
 
             checkScoreCondition(playerHits, 'player')
             displayScore('computer') //Update computer score accordingly
+            hitCountPlayer += 1
+            displayHitMissStatus('player')
 
             idicateDownedShips('player')
             playerClick()
@@ -429,6 +455,8 @@ function playerClick(e){
             infoDisplay.textContent = 'You missed this time'
             e.target.classList.add('missed')
             e.target.style.backgroundColor = 'white'
+            missCountPlayer += 1
+            displayHitMissStatus('player') //Update computer score accordingly
         }
         playerTurn = false
         const compBoardTiles = document.querySelectorAll('#computer div')
@@ -438,8 +466,8 @@ function playerClick(e){
 }
 
 
-let gridNumberIndex = Array.from(Array(100).keys())
 //Handle Computer's turn
+let gridNumberIndex = Array.from(Array(100).keys())
 function computerTurn(){
     turnDisplay.textContent = "Computer's turn! Waiting..."
     if(!gameOver){
@@ -463,6 +491,8 @@ function computerTurn(){
 
             checkScoreCondition(computerHits, 'computer')
             displayScore('player') //Update player score accordingly
+            hitCountComputer += 1
+            displayHitMissStatus('computer')
 
             idicateDownedShips('computer')
             gridNumberIndex = gridNumberIndex.filter(tile => tile !== computerAttack)
@@ -475,6 +505,8 @@ function computerTurn(){
             infoDisplay.textContent = 'The computer missed!'
             playerBoardTiles[computerAttack].classList.add('missed')
             gridNumberIndex = gridNumberIndex.filter(tile => tile !== computerAttack)
+            missCountComputer += 1
+            displayHitMissStatus('computer') //Update player score accordingly
         }
         }, 1000)
         

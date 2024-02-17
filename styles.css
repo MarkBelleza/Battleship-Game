@@ -1,6 +1,18 @@
 
 body{
-    background-color: rgb(88, 8, 55);
+    background-color: rgb(255, 255, 255);
+    font-family: 'Franklin Gothic Medium', 'Arial Narrow', Arial, sans-serif;
+}
+
+#computer-status{
+    position: absolute;
+    top: 3%;
+}
+
+#player-status{
+    position: absolute;
+    top: 3%;
+    left: 87%;
 }
 
 #score{
