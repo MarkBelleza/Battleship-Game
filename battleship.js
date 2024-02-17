@@ -258,6 +258,12 @@ function resetGame(){
     computerDownedShips = []
     gridNumberIndex = Array.from(Array(100).keys())
 
+    hitCountPlayer = 0
+    missCountPlayer = 0
+
+    hitCountComputer = 0
+    missCountComputer = 0
+
     gameOver = false
     gameStart = false
 
@@ -300,6 +306,8 @@ function resetGame(){
     displayScore('player')
     displayScore('computer')
     computerBoardShipInvisible()
+    displayHitMissStatus('player')
+    displayHitMissStatus('computer')
 }
 
 
