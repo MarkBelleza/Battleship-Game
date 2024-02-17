@@ -3,6 +3,18 @@ body{
     background-color: rgb(88, 8, 55);
 }
 
+#score{
+    position: absolute;
+    top: 10%;
+    left: 40%;
+    width: 400px;
+    height: 400px;
+}
+
+#your-ships{
+    width: 20px;
+}
+
 
 .missed{
     background-color: white;

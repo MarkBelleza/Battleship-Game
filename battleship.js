@@ -6,23 +6,27 @@ const startBttn = document.querySelector('#start-button')
 const infoDisplay = document.querySelector('#info')
 const turnDisplay = document.querySelector('#turn-display')
 const bttnContainer = document.querySelector('#buttons-container')
+const scoreBoard = document.querySelector('#score')
+const playerShipsLeft = document.querySelector('#your-ships')
+const enemyShipsLeft = document.querySelector('#enemy-ships')
 
 //Create Ships Class
 class Ship{
-    constructor(name, length){
+    constructor(name, length, alias){
         this.name = name
         this.length = length
+        this.alias = alias
     }
 }
 
-const boat1 = new Ship('small-1', 1)
-const boat2 = new Ship('small-2', 1)
-const boat3 = new Ship('small-3', 1)
-const ship1 = new Ship('medium-1', 2)
-const ship2 = new Ship('medium-2', 2)
-const submarine1 = new Ship('large-1', 3)
-const submarine2 = new Ship('large-2', 3)
-const navy = new Ship('destroyer', 4)
+const boat1 = new Ship('small-1', 1, 'Cruiser')
+const boat2 = new Ship('small-2', 1, 'Cruiser')
+const boat3 = new Ship('small-3', 1, 'Cruiser')
+const ship1 = new Ship('medium-1', 2, 'Submarine')
+const ship2 = new Ship('medium-2', 2, 'Submarine')
+const submarine1 = new Ship('large-1', 3, 'Battleship')
+const submarine2 = new Ship('large-2', 3, 'Battleship')
+const navy = new Ship('destroyer', 4, 'Destroyer')
 
 const ships = [boat1, boat2, boat3, 
     ship1, ship2, 
@@ -178,6 +182,7 @@ ships.forEach(ship =>{
 
 let gameStart = false
 function resetBoard(){
+    angle = 0
     const playerBoardTiles = document.querySelectorAll('#player div')
     if(!gameStart){ //If the game has not started yet, then reset the board
         playerBoardTiles.forEach(tile => {
@@ -209,7 +214,38 @@ let computerHits = []
 let playerDownedShips = [] //Ships the player has destroyed from the enemy's board
 let computerDownedShips = [] //Ships the computer has destroyed from the player's board
 
+let initialCountShipsPlayer = {
+    'Cruiser' : 3,
+    'Submarine' : 2,
+    'Battleship' : 2,
+    'Destroyer' : 1
+}
+
+let initialCountShipsComputer = {
+    'Cruiser' : 3,
+    'Submarine' : 2,
+    'Battleship' : 2,
+    'Destroyer' : 1
+}
+function displayScore(user){
+    if(user === 'player'){
+        playerShipsLeft.textContent = `(${initialCountShipsPlayer['Cruiser']}) Cruiser  `
+        playerShipsLeft.textContent += `(${initialCountShipsPlayer['Submarine']}) Submarine  `
+        playerShipsLeft.textContent += `(${initialCountShipsPlayer['Battleship']}) Battleship  `
+        playerShipsLeft.textContent += `(${initialCountShipsPlayer['Destroyer']}) Destroyer  `
+
+    }else if(user === 'computer'){
+        enemyShipsLeft.textContent = `(${initialCountShipsComputer['Cruiser']}) Cruiser  `
+        enemyShipsLeft.textContent += `(${initialCountShipsComputer['Submarine']}) Submarine  `
+        enemyShipsLeft.textContent += `(${initialCountShipsComputer['Battleship']}) Battleship  `
+        enemyShipsLeft.textContent += `(${initialCountShipsComputer['Destroyer']}) Destroyer  `
+    }
+}
+displayScore('player')
+displayScore('computer')
+
 function resetGame(){
+    angle = 0
     playerHits = []
     computerHits = []
     playerDownedShips = []
@@ -217,6 +253,21 @@ function resetGame(){
 
     gameOver = false
     gameStart = false
+
+    initialCountShipsPlayer = {
+        'Cruiser' : 3,
+        'Submarine' : 2,
+        'Battleship' : 2,
+        'Destroyer' : 1
+    }
+    
+
+    initialCountShipsComputer = {
+        'Cruiser' : 3,
+        'Submarine' : 2,
+        'Battleship' : 2,
+        'Destroyer' : 1
+    }
 
 
     //Delete and re create computer and player boards
@@ -239,6 +290,10 @@ function resetGame(){
 
     turnDisplay.textContent = ""
     infoDisplay.textContent = ""
+
+    //Reset score
+    displayScore('player')
+    displayScore('computer')
 }
 
 function createPlayAgainBttn(){
@@ -294,13 +349,15 @@ function checkScoreCondition(userHits, user){
         if(userHits.filter(shipHit => shipHit === ship.name).length === ship.length){
             //remove the ship in the userHit array and add that ship to the downedShips array
             if (user === 'player'){
-                infoDisplay.textContent = "You have downed the enemy's ship name: " + ship.name
+                infoDisplay.textContent = "You have downed the enemy's " + ship.alias
+                initialCountShipsComputer[ship.alias] -= 1
                 playerDownedShips.push(ship.name)
                 playerHits = userHits.filter(shipHit => shipHit !== ship.name)
                 gameOver = playerDownedShips.length === 8 ? true : false
             }
             else if (user === 'computer'){
-                infoDisplay.textContent = "The enemy have downed your ship named: " + ship.name
+                infoDisplay.textContent = "The enemy have downed your " + ship.alias
+                initialCountShipsPlayer[ship.alias] -= 1
                 computerDownedShips.push(ship.name)
                 computerHits = userHits.filter(shipHit => shipHit !== ship.name)
                 gameOver = computerDownedShips.length === 8 ? true : false
@@ -351,6 +408,8 @@ function playerClick(e){
             playerHits.push(...classes)
 
             checkScoreCondition(playerHits, 'player')
+            displayScore('computer') //Update computer score accordingly
+
             idicateDownedShips('player')
             playerClick()
             return
@@ -398,6 +457,8 @@ function computerTurn(){
             computerHits.push(...classes)
 
             checkScoreCondition(computerHits, 'computer')
+            displayScore('player') //Update player score accordingly
+
             idicateDownedShips('computer')
             computerTurn()
             return
