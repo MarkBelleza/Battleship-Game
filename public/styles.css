@@ -15,6 +15,17 @@ body{
     left: 87%;
 }
 
+#player-1{
+    position: absolute;
+    top: 20%;
+}
+
+#player-2{
+    position: absolute;
+    top: 20%;
+    left: 87%;
+}
+
 #score{
     position: absolute;
     top: 10%;
@@ -113,4 +124,23 @@ body{
 
 #replay-button{
     background-color: greenyellow;
+}
+
+.connected, .ready{
+    font-weight: normal;
+}
+
+.connected span,
+.ready span{
+    display: inline-block;
+    border-radius: 50%;
+    width: 1rem;
+    height: 1rem;
+    background: red;
+    vertical-align: middle;
+
+}
+
+span.green{
+    background: green;
 }
