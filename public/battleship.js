@@ -225,7 +225,6 @@ function startMultiPlayerGame(socket) {
             const readyUp = JSON.stringify({
                 event: 'player-ready',
             });
-            //TODO: FOR SOME REASON SOCKET NOT SENDING AFTER RESETING GAME
             socket.send(readyUp) //Notify other player you are ready, they will update their client
             ready = true
             playerReady(playerNum) //Update Ready visuals
