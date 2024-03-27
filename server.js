@@ -52,7 +52,7 @@ wss.on('connection', function connection(ws) {
         connections[playerIndex] = null
         //Broadcast to everyone who disconnected
         const playerDisconnect = JSON.stringify({
-            event: 'player-connection',
+            event: 'player-disconnect',
             payload: playerIndex
         });
         wss.clients.forEach(function each(client) {
@@ -132,9 +132,9 @@ wss.on('connection', function connection(ws) {
 
 });
 
-wss.on('close', function connection(ws) {
-    console.log('Player', 'disconnected')
-})
+// wss.on('close', function connection(ws) {
+//     console.log('disconnected')
+// })
 
 app.use(express.static('public'));
 

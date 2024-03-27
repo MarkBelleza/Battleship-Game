@@ -65,7 +65,8 @@ function startMultiPlayer() {
                 if (num === -1) {
                     infoDisplay.innerHTML = 'Server currently full, enjoy single player';
                     gameMode = ''
-                    socket.close();
+                    socket.close()
+                    console.log('Player closed')
                     return
                 } else {
                     playerNum = parseInt(num);
@@ -90,8 +91,16 @@ function startMultiPlayer() {
             if (data.event === 'player-connection') {
                 const num2 = data.payload;
                 console.log('Annoucement: Player number', num2, 'has joined')
-                playerJoinedDisc(num2)
+                playerJoined(num2)
             }
+
+
+            if (data.event === 'player-disconnect') {
+                const num4 = data.payload;
+                console.log('Annoucement: Player number', num4, 'has disconnected')
+                playerDisconnect(num4)
+            }
+
 
             //Notify evryone about player Ready status
             if (data.event === 'enemy-ready') {
@@ -106,7 +115,7 @@ function startMultiPlayer() {
             if (data.event === 'check-players') {
                 const status = data.payload
                 status.forEach((p, i) => {
-                    if (p.connected) playerJoinedDisc(i)
+                    if (p.connected) playerJoined(i)
                     if (p.ready) {
                         playerReady(i)
                         if (i !== playerNum) enemyReady = true
@@ -124,21 +133,20 @@ function startMultiPlayer() {
 
                 enemyTurn(parseInt(data.payload)) //Update my board
                 socket.send(tileClasses)
-                startMultiPlayerGame(socket) //Switch turn
             }
 
 
-            //On fire reply recieved (recieving classList) (update attacker's board)
+            //On fire reply recieved (recieving classList) (update attacker's board after firing)
             if (data.event === 'fire-reply') {
-                userTurn(data.payload) //TODO: HANDLE UPDATING THE ATTACKER'S BOARD AFTER RECIEVING MSSG FROM  OTHER PLAYER
-                startMultiPlayerGame(socket)
+                userTurn(data.payload)
+                // if (gameOver) socket.close()
             }
 
 
-            function playerJoinedDisc(num) {
+            function playerJoined(num) {
                 //get corresponding player-1/2 id in document
                 let player = document.querySelector(`#player-${parseInt(num) + 1}`)
-                player.querySelector('.connected span').classList.toggle('green')
+                player.querySelector('.connected span').classList.add('green')
 
                 //if player that joined is us, then have indicator which baord we are
                 if (parseInt(num) === playerNum) {
@@ -146,15 +154,24 @@ function startMultiPlayer() {
                 }
             }
 
+            function playerDisconnect(num) {
+                //get corresponding player-1/2 id in document
+                let player = document.querySelector(`#player-${parseInt(num) + 1}`)
+                player.querySelector('.connected span').classList.remove('green')
+                player.querySelector('.ready span').classList.remove('green')
+            }
+
         });
+
         //Ready button click
         startBttn.addEventListener('click', () => {
-            if (allShipsPlaced) {
-                startMultiPlayerGame(socket)
-            }
-            else {
-                infoDisplay.innerHTML = "Drop down your battleships!!"
-            }
+            if (gameMode === 'multiplayer')
+                if (allShipsPlaced) {
+                    startMultiPlayerGame(socket)
+                }
+                else {
+                    infoDisplay.innerHTML = "Drop down your battleships!!"
+                }
         })
 
 
@@ -173,12 +190,29 @@ function startMultiPlayer() {
                 }
             })
         })
+
+        function diconnectPlayer() {
+            socket.close()
+        }
+
+    }
+}
+
+//Update Ready visuals
+function playerReady(num) {
+    //get corresponding player-1/2 id in document
+    let player = players.querySelector(`#player-${parseInt(num) + 1}`)
+    player.querySelector('.ready span').classList.add('green')
+
+    //if player that joined is us, then have indicator which baord we are
+    if (parseInt(num) === playerNum) {
+        player.querySelector('.ready').style.fontWeight = 'bold'
     }
 }
 
 //Logic for Multiplayer
 function startMultiPlayerGame(socket) {
-    if (!gameStart) {
+    if (!gameStart && gameMode === 'multiplayer') {
         if (!ready) {
             //Broadcast to everyone this player is ready
             const readyUp = JSON.stringify({
@@ -221,7 +255,7 @@ function startSinglePlayer() {
 
 //Logic for Single Player
 function startSinglePlayerGame() {
-    if (!gameStart) {
+    if (!gameStart && gameMode === 'singlePlayer') {
         if (shipsContainer.children.length != 0) {
             infoDisplay.textContent = 'Drop down your battleships!!'
         } else {
@@ -500,9 +534,6 @@ function resetGame() {
 
     //Populate computer board with ships and provide player with draggable ships
     resetBoard()
-    ships.forEach(ship => {
-        addShipPiece(ship, 'computer')
-    })
 
     //Delete the play again button
     const playBttn = document.querySelector('#replay-button')
@@ -522,8 +553,6 @@ function resetGame() {
     multiplayerButton.classList.remove('invisible')
     singlePlayerButton.classList.remove('invisible')
     scoreBoard.classList.remove('invisible')
-    if (gameMode === 'multiplayer') socket.close();
-    console.log('here')
 }
 
 
@@ -548,7 +577,7 @@ function winCondition(user) {
             infoDisplay.textContent = "The enemy have won! :("
         }
 
-        createPlayAgainBttn()
+        if (gameMode === 'singlePlayer') createPlayAgainBttn()
     }
 }
 
@@ -602,18 +631,6 @@ function checkScoreCondition(userHits, user) {
     winCondition(user)
 }
 
-//Update Ready visuals
-function playerReady(num) {
-    //get corresponding player-1/2 id in document
-    let player = players.querySelector(`#player-${parseInt(num) + 1}`)
-    player.querySelector('.ready span').classList.toggle('green')
-
-    //if player that joined is us, then have indicator which baord we are
-    if (parseInt(num) === playerNum) {
-        player.querySelector('.ready').style.fontWeight = 'bold'
-    }
-}
-
 //Player's attacks counter
 let hitCountPlayer = 0
 let missCountPlayer = 0
@@ -640,6 +657,7 @@ function displayHitMissStatus(user) {
 }
 const classToFilterOut = ['taken', 'hit', 'tile']
 
+//Multiplayer (update attacker's board when attacking)
 function userTurn(prividedClassList) {
     //Use provided classList to check for conditions
     const classListObj = Object.values(prividedClassList)
@@ -687,7 +705,7 @@ function userTurn(prividedClassList) {
     }
 }
 
-//Handle Player's turn
+//Single player (Handle Player's turn)
 function playerClick(e) {
     if (!gameOver) {
         //If Player hits an already hit tile, then go again
@@ -731,6 +749,7 @@ function playerClick(e) {
     }
 }
 
+//Multiplayer (update my board when being attacked by enemy)
 function enemyTurn(computerAttack) {
     if (!gameOver) {
         const playerBoardTiles = document.querySelectorAll('#player div')
@@ -772,7 +791,7 @@ function enemyTurn(computerAttack) {
     }
 }
 
-//Handle Computer's turn
+//Single player (Handle Computer's turn)
 let gridNumberIndex = Array.from(Array(100).keys())
 function computerTurn() {
     turnDisplay.textContent = "Computer's turn! Waiting..."
