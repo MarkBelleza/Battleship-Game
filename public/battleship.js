@@ -12,6 +12,8 @@ const enemyShipsLeft = document.querySelector('#enemy-ships')
 const singlePlayerButton = document.querySelector('#single-player-button')
 const multiplayerButton = document.querySelector('#multiplayer-button')
 const players = document.querySelector('#players')
+let gameStart = false
+let gameOver = false
 
 //Multiplayer related variables
 let currentPlayer = 'user'
@@ -21,6 +23,7 @@ let ready = false
 let enemyReady = false
 let allShipsPlaced = false
 let shotFired = -1
+let socket = null
 
 // Select mode to play
 singlePlayerButton.addEventListener('click', startSinglePlayer)
@@ -55,7 +58,7 @@ function startMultiPlayer() {
         gameMode = 'multiplayer'
 
         // Create WebSocket connection.
-        const socket = new WebSocket("ws://localhost:3000");
+        socket = new WebSocket("ws://localhost:3000");
 
         //Get your player number
         socket.addEventListener('message', (event) => {
@@ -66,7 +69,7 @@ function startMultiPlayer() {
                     infoDisplay.innerHTML = 'Server currently full, enjoy single player';
                     gameMode = ''
                     socket.close()
-                    console.log('Player closed')
+                    socket = null
                     return
                 } else {
                     playerNum = parseInt(num);
@@ -90,14 +93,12 @@ function startMultiPlayer() {
             //Notify everyone about another player connecting/disconnecting
             if (data.event === 'player-connection') {
                 const num2 = data.payload;
-                console.log('Annoucement: Player number', num2, 'has joined')
                 playerJoined(num2)
             }
 
 
             if (data.event === 'player-disconnect') {
                 const num4 = data.payload;
-                console.log('Annoucement: Player number', num4, 'has disconnected')
                 playerDisconnect(num4)
             }
 
@@ -105,9 +106,9 @@ function startMultiPlayer() {
             //Notify evryone about player Ready status
             if (data.event === 'enemy-ready') {
                 const num3 = data.payload
-                console.log('Annoucement: Player number', num3, 'is READY')
+                console.log('Annoucement: Player number', parseInt(num3) + 1, 'is READY')
                 enemyReady = true
-                playerReady(num3) //Update Ready visuals
+                playerReady(num3) //Update enemy's Ready visuals
                 if (ready) startMultiPlayerGame(socket)
             }
 
@@ -133,35 +134,39 @@ function startMultiPlayer() {
 
                 enemyTurn(parseInt(data.payload)) //Update my board
                 socket.send(tileClasses)
+                if (gameOver) {
+                    diconnectAndResetGame()
+                }
             }
-
 
             //On fire reply recieved (recieving classList) (update attacker's board after firing)
             if (data.event === 'fire-reply') {
                 userTurn(data.payload)
-                // if (gameOver) socket.close()
-            }
-
-
-            function playerJoined(num) {
-                //get corresponding player-1/2 id in document
-                let player = document.querySelector(`#player-${parseInt(num) + 1}`)
-                player.querySelector('.connected span').classList.add('green')
-
-                //if player that joined is us, then have indicator which baord we are
-                if (parseInt(num) === playerNum) {
-                    player.querySelector('.connected').style.fontWeight = 'bold'
+                if (gameOver) {
+                    diconnectAndResetGame()
                 }
             }
 
-            function playerDisconnect(num) {
-                //get corresponding player-1/2 id in document
-                let player = document.querySelector(`#player-${parseInt(num) + 1}`)
-                player.querySelector('.connected span').classList.remove('green')
-                player.querySelector('.ready span').classList.remove('green')
-            }
-
         });
+
+        function playerJoined(num) {
+            //get corresponding player-1/2 id in document
+            let player = document.querySelector(`#player-${parseInt(num) + 1}`)
+            player.querySelector('.connected span').classList.add('green')
+
+            //Show indicator, which player we are
+            if (parseInt(num) === playerNum) {
+                player.querySelector('.connected').style.fontWeight = 'bold'
+            }
+        }
+
+        //Remove the green icons
+        function playerDisconnect(num) {
+            //get corresponding player-1/2 id in document
+            let player = document.querySelector(`#player-${parseInt(num) + 1}`)
+            player.querySelector('.connected span').classList.remove('green')
+            player.querySelector('.ready span').classList.remove('green')
+        }
 
         //Ready button click
         startBttn.addEventListener('click', () => {
@@ -191,8 +196,10 @@ function startMultiPlayer() {
             })
         })
 
-        function diconnectPlayer() {
+        function diconnectAndResetGame() {
             socket.close()
+            createPlayAgainBttn()
+            socket = null
         }
 
     }
@@ -218,6 +225,7 @@ function startMultiPlayerGame(socket) {
             const readyUp = JSON.stringify({
                 event: 'player-ready',
             });
+            //TODO: FOR SOME REASON SOCKET NOT SENDING AFTER RESETING GAME
             socket.send(readyUp) //Notify other player you are ready, they will update their client
             ready = true
             playerReady(playerNum) //Update Ready visuals
@@ -416,8 +424,6 @@ function addShipPiece(ship, user, startPoint) {
 }
 
 
-
-let gameStart = false
 function resetBoard() {
     angle = 0
     const playerBoardTiles = document.querySelectorAll('#player div')
@@ -441,7 +447,7 @@ function resetBoard() {
 resetBttn.addEventListener('click', resetBoard)
 
 
-let gameOver = false
+
 let playerTurn
 
 let playerHits = []
@@ -483,6 +489,26 @@ displayScore('computer')
 
 
 function resetGame() {
+    //Reset connection statuses
+    if (gameMode === 'multiplayer') {
+        const player1 = players.querySelector('#player-1')
+        const player2 = players.querySelector('#player-2')
+
+        //remove green icon from connected status
+        player1.querySelector('.connected span').classList.remove('green')
+        player2.querySelector('.connected span').classList.remove('green')
+
+        //remove green icon from ready status
+        player1.querySelector('.ready span').classList.remove('green')
+        player2.querySelector('.ready span').classList.remove('green')
+
+        //remove bold fonts
+        player1.querySelector('.connected').style.fontWeight = 'normal'
+        player1.querySelector('.ready').style.fontWeight = 'normal'
+        player2.querySelector('.connected').style.fontWeight = 'normal'
+        player2.querySelector('.ready').style.fontWeight = 'normal'
+
+    }
     //Reset all related variables
     gameMode = ''
     angle = 0
@@ -493,6 +519,7 @@ function resetGame() {
     gridNumberIndex = Array.from(Array(100).keys())
 
     //Multiplater related variables
+    socket = null
     currentPlayer = 'user'
     gameMode = ''
     playerNum = 0
@@ -553,6 +580,7 @@ function resetGame() {
     multiplayerButton.classList.remove('invisible')
     singlePlayerButton.classList.remove('invisible')
     scoreBoard.classList.remove('invisible')
+    // location.reload()
 }
 
 

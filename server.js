@@ -34,7 +34,6 @@ wss.on('connection', function connection(ws) {
     if (playerIndex === -1) return
     connections[playerIndex] = false
 
-
     //Broadcast to everyone connected who connected
     const playerConnection = JSON.stringify({
         event: 'player-connection',
@@ -60,23 +59,28 @@ wss.on('connection', function connection(ws) {
                 client.send(playerDisconnect);
             }
         });
+        console.log(connections)
     })
 
     //Handle messages recieved
     //Handle on Ready player
     ws.on('message', function message(data) {
         const mssg = JSON.parse(data)
+
+        console.log(mssg.event)
+
         if (mssg.event === 'player-ready') {
             const playerReady = JSON.stringify({
                 event: 'enemy-ready',
                 payload: playerIndex
             });
+            connections[playerIndex] = true
+
             wss.clients.forEach(function each(client) {
                 if (client !== ws && client.readyState === WebSocket.OPEN) {
                     client.send(playerReady);
                 }
             });
-            connections[playerIndex] = true
         }
 
         //Check status of other players connected
@@ -95,7 +99,6 @@ wss.on('connection', function connection(ws) {
 
         //Check for fired position recieved
         if (mssg.event === 'fire') {
-            console.log('Selected tile', mssg.payload)
 
             //Send the tile id to the other player
             wss.clients.forEach(function each(client) {
@@ -112,7 +115,6 @@ wss.on('connection', function connection(ws) {
 
         //Check for fire reply from other player that was attcked
         if (mssg.event === 'fire-reply') {
-            //console.log(mssg.payload)
 
             //Send the resulting classList of the tile that was bomed to the player who attacked it
             wss.clients.forEach(function each(client) {
@@ -131,10 +133,6 @@ wss.on('connection', function connection(ws) {
     //------------------------------------------------------------------
 
 });
-
-// wss.on('close', function connection(ws) {
-//     console.log('disconnected')
-// })
 
 app.use(express.static('public'));
 
