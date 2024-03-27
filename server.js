@@ -13,21 +13,6 @@ const connections = [null, null]
 //On connection
 wss.on('connection', function connection(ws) {
 
-    // //listen for messages
-    // ws.on('message', message => {
-    //     console.log(message)
-    //     if (message === 'player-ready') {
-    //         wss.clients.forEach(function each(client) {
-    //             if (client !== ws && client.readyState === WebSocket.OPEN) {
-    //                 client.send('enemy-ready');
-    //                 connections[playerIndex] = true
-    //                 console.log(connections)
-    //             }
-    //         });
-    //     }
-    //     // ws.send('You sent -> ' + message); //send to client
-    // });
-
     //Find an available player number (only 2 players at a time) ---
     let playerIndex = -1
     for (const i in connections) {
@@ -77,6 +62,7 @@ wss.on('connection', function connection(ws) {
         });
     })
 
+    //Handle messages recieved
     //Handle on Ready player
     ws.on('message', function message(data) {
         const mssg = JSON.parse(data)
@@ -88,10 +74,9 @@ wss.on('connection', function connection(ws) {
             wss.clients.forEach(function each(client) {
                 if (client !== ws && client.readyState === WebSocket.OPEN) {
                     client.send(playerReady);
-
-                    connections[playerIndex] = true
                 }
             });
+            connections[playerIndex] = true
         }
 
         //Check status of other players connected
@@ -108,11 +93,48 @@ wss.on('connection', function connection(ws) {
             ws.send(playerStatus)
         }
 
+        //Check for fired position recieved
+        if (mssg.event === 'fire') {
+            console.log('Selected tile', mssg.payload)
+
+            //Send the tile id to the other player
+            wss.clients.forEach(function each(client) {
+                if (client !== ws && client.readyState === WebSocket.OPEN) {
+                    const playerMove = JSON.stringify({
+                        event: 'fire',
+                        payload: mssg.payload
+                    });
+                    client.send(playerMove)
+                }
+            });
+        }
+
+
+        //Check for fire reply from other player that was attcked
+        if (mssg.event === 'fire-reply') {
+            //console.log(mssg.payload)
+
+            //Send the resulting classList of the tile that was bomed to the player who attacked it
+            wss.clients.forEach(function each(client) {
+                if (client !== ws && client.readyState === WebSocket.OPEN) {
+                    const playerMoveFeedback = JSON.stringify({
+                        event: 'fire-reply',
+                        payload: mssg.payload
+                    });
+                    client.send(playerMoveFeedback)
+                }
+            });
+        }
     });
+
 
     //------------------------------------------------------------------
 
 });
+
+wss.on('close', function connection(ws) {
+    console.log('Player', 'disconnected')
+})
 
 app.use(express.static('public'));
 

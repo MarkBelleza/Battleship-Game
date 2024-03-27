@@ -11,6 +11,7 @@ const playerShipsLeft = document.querySelector('#your-ships')
 const enemyShipsLeft = document.querySelector('#enemy-ships')
 const singlePlayerButton = document.querySelector('#single-player-button')
 const multiplayerButton = document.querySelector('#multiplayer-button')
+const players = document.querySelector('#players')
 
 //Multiplayer related variables
 let currentPlayer = 'user'
@@ -50,91 +51,137 @@ const ships = [boat1, boat2, boat3,
 
 //Multi Player
 function startMultiPlayer() {
-    gameMode = 'multiplayer'
+    if (gameMode === '') {
+        gameMode = 'multiplayer'
 
-    // Create WebSocket connection.
-    const socket = new WebSocket("ws://localhost:3000");
+        // Create WebSocket connection.
+        const socket = new WebSocket("ws://localhost:3000");
 
-    //Get your player number
-    socket.addEventListener('message', (event) => {
-        const data = JSON.parse(event.data);
-        if (data.event === 'player-number') {
-            const num = data.payload;
-            if (num === -1) {
-                infoDisplay.innerHTML = 'Server currently full, enjoy single player';
-            } else {
-                playerNum = parseInt(num);
-                if (playerNum === 1) currentPlayer = "enemy";
+        //Get your player number
+        socket.addEventListener('message', (event) => {
+            const data = JSON.parse(event.data);
+            if (data.event === 'player-number') {
+                const num = data.payload;
+                if (num === -1) {
+                    infoDisplay.innerHTML = 'Server currently full, enjoy single player';
+                    gameMode = ''
+                    socket.close();
+                    return
+                } else {
+                    playerNum = parseInt(num);
+                    if (playerNum === 1) currentPlayer = "enemy";
 
-                console.log(playerNum);
+                    infoDisplay.innerHTML = 'Joined server!';
+                    //remove unnecessary buttons
+                    singlePlayerButton.classList.add('invisible')
+                    multiplayerButton.classList.add('invisible')
+                    scoreBoard.classList.add('invisible')
 
-                //Get other player status
-                const checkOtherUsers = JSON.stringify({
-                    event: 'check-players',
-                });
-                socket.send(checkOtherUsers)
+                    //Get other player status
+                    const checkOtherUsers = JSON.stringify({
+                        event: 'check-players',
+                    });
+                    socket.send(checkOtherUsers)
+                }
             }
-        }
 
-        //Notify everyone about another player connecting/disconnecting
-        if (data.event === 'player-connection') {
-            const num2 = data.payload;
-            console.log('Annoucement: Player number', num2, 'has joined')
-            playerJoinedDisc(num2)
-        }
+            //Notify everyone about another player connecting/disconnecting
+            if (data.event === 'player-connection') {
+                const num2 = data.payload;
+                console.log('Annoucement: Player number', num2, 'has joined')
+                playerJoinedDisc(num2)
+            }
 
-        //Notify evryone about player Ready status
-        if (data.event === 'enemy-ready') {
-            const num3 = data.payload
-            console.log('Annoucement: Player number', num3, 'is READY')
-            enemyReady = true
-            playerReady(num3) //Update Ready visuals
-            if (ready) startMultiPlayerGame(socket)
-        }
+            //Notify evryone about player Ready status
+            if (data.event === 'enemy-ready') {
+                const num3 = data.payload
+                console.log('Annoucement: Player number', num3, 'is READY')
+                enemyReady = true
+                playerReady(num3) //Update Ready visuals
+                if (ready) startMultiPlayerGame(socket)
+            }
 
-        //Check player status
-        if (data.event === 'check-players') {
-            const status = data.payload
-            status.forEach((p, i) => {
-                if (p.connected) playerJoinedDisc(i)
-                if (p.ready) {
-                    playerReady(i)
-                    if (i !== playerNum) enemyReady = true
+            //Check player status
+            if (data.event === 'check-players') {
+                const status = data.payload
+                status.forEach((p, i) => {
+                    if (p.connected) playerJoinedDisc(i)
+                    if (p.ready) {
+                        playerReady(i)
+                        if (i !== playerNum) enemyReady = true
+                    }
+                })
+            }
+
+            //On fire recieved (recieved by other player)
+            if (data.event === 'fire') {
+                const tileAttacked = document.querySelectorAll('#player div')[parseInt(data.payload)]
+                const tileClasses = JSON.stringify({
+                    event: 'fire-reply',
+                    payload: tileAttacked.classList
+                });
+                console.log(tileAttacked)
+                enemyTurn(parseInt(data.payload)) //Update my board
+                socket.send(tileClasses)
+                startMultiPlayerGame(socket) //Switch turn
+            }
+
+
+            //On fire reply recieved (recieving classList) (update attacker's board)
+            if (data.event === 'fire-reply') {
+                userTurn(data.payload) //TODO: HANDLE UPDATING THE ATTACKER'S BOARD AFTER RECIEVING MSSG FROM  OTHER PLAYER
+                startMultiPlayerGame(socket)
+            }
+
+
+            function playerJoinedDisc(num) {
+                //get corresponding player-1/2 id in document
+                let player = document.querySelector(`#player-${parseInt(num) + 1}`)
+                player.querySelector('.connected span').classList.toggle('green')
+
+                //if player that joined is us, then have indicator which baord we are
+                if (parseInt(num) === playerNum) {
+                    player.querySelector('.connected').style.fontWeight = 'bold'
+                }
+            }
+
+        });
+        //Ready button click
+        startBttn.addEventListener('click', () => {
+            if (allShipsPlaced) {
+                startMultiPlayerGame(socket)
+            }
+            else {
+                infoDisplay.innerHTML = "Drop down your battleships!!"
+            }
+        })
+
+
+
+        let enemyBoard = document.querySelectorAll('#computer div')
+        //Setup event listeners for firing (at the start of game)
+        enemyBoard.forEach(tile => {
+            tile.addEventListener('click', () => {
+                if (currentPlayer === 'user' && ready && enemyReady) {
+                    shotFired = parseInt(tile.id) //position of tile fired
+                    const fired = JSON.stringify({
+                        event: 'fire',
+                        payload: tile.id
+                    });
+                    socket.send(fired) //Send position of where we fired at
                 }
             })
-        }
+        })
 
-        function playerJoinedDisc(num) {
-            //get corresponding player-1/2 id in document
-            let player = document.querySelector(`#player-${parseInt(num) + 1}`)
-            player.querySelector('.connected span').classList.toggle('green')
-
-            //if player that joined is us, then have indicator which baord we are
-            if (parseInt(num) === playerNum) {
-                player.querySelector('.connected').style.fontWeight = 'bold'
-            }
-        }
-
-    });
-
-    //Ready button click
-    startBttn.addEventListener('click', () => {
-        if (allShipsPlaced) {
-            startMultiPlayerGame(socket)
-        }
-        else {
-            infoDisplay.innerHTML = "Drop down your battleships!!"
-        }
-    })
-
-    // socket.addEventListener('message', (event) => {
-    //     console.log('here')
-    //     const data = JSON.parse(event.data);
-    //     if (data.event === 'player-connection') {
-    //         const num = data.payload;
-    //         console.log('Player number', num, 'has joined')
-    //     }
-    // })
+        // socket.addEventListener('message', (event) => {
+        //     console.log('here')
+        //     const data = JSON.parse(event.data);
+        //     if (data.event === 'player-connection') {
+        //         const num = data.payload;
+        //         console.log('Player number', num, 'has joined')
+        //     }
+        // })
+    }
 }
 
 //Logic for Multiplayer
@@ -164,12 +211,20 @@ function startMultiPlayerGame(socket) {
 
 //Single Player
 function startSinglePlayer() {
-    gameMode = 'singlePlayer'
-    ships.forEach(ship => {
-        addShipPiece(ship, 'computer')
-    })
+    if (gameMode === '') {
+        gameMode = 'singlePlayer'
+        multiplayerButton.classList.add('invisible')
+        singlePlayerButton.classList.add('invisible')
 
-    startBttn.addEventListener('click', startSinglePlayerGame)
+        infoDisplay.innerHTML = 'Single Player Mode'
+
+        players.classList.add('invisible')
+        ships.forEach(ship => {
+            addShipPiece(ship, 'computer')
+        })
+
+        startBttn.addEventListener('click', startSinglePlayerGame)
+    }
 }
 
 //Create game board
@@ -388,12 +443,22 @@ displayScore('computer')
 
 function resetGame() {
     //Reset all related variables
+    gameMode = ''
     angle = 0
     playerHits = []
     computerHits = []
     playerDownedShips = []
     computerDownedShips = []
     gridNumberIndex = Array.from(Array(100).keys())
+
+    //Multiplater related variables
+    currentPlayer = 'user'
+    gameMode = ''
+    playerNum = 0
+    ready = false
+    enemyReady = false
+    allShipsPlaced = false
+    shotFired = -1
 
     hitCountPlayer = 0
     missCountPlayer = 0
@@ -445,6 +510,13 @@ function resetGame() {
     computerBoardShipInvisible()
     displayHitMissStatus('player')
     displayHitMissStatus('computer')
+    players.classList.remove('invisible')
+
+    multiplayerButton.classList.remove('invisible')
+    singlePlayerButton.classList.remove('invisible')
+    scoreBoard.classList.remove('invisible')
+    if (gameMode === 'multiplayer') socket.close();
+    console.log('here')
 }
 
 
@@ -526,7 +598,7 @@ function checkScoreCondition(userHits, user) {
 //Update Ready visuals
 function playerReady(num) {
     //get corresponding player-1/2 id in document
-    let player = document.querySelector(`#player-${parseInt(num) + 1}`)
+    let player = players.querySelector(`#player-${parseInt(num) + 1}`)
     player.querySelector('.ready span').classList.toggle('green')
 
     //if player that joined is us, then have indicator which baord we are
@@ -575,8 +647,59 @@ function displayHitMissStatus(user) {
         computerMissCount.textContent = missCountComputer
     }
 }
-
 const classToFilterOut = ['taken', 'hit', 'tile']
+
+function userTurn(prividedClassList) {
+    //Use provided classList to check for conditions
+    const classListObj = Object.values(prividedClassList)
+    console.log(classListObj)
+
+    //Get the tile that is was attacked by user in current client
+    const computerBoard = document.querySelectorAll('#computer div')
+    const enemyTile = computerBoard[shotFired]
+    console.log(enemyTile)
+
+    if (!gameOver && currentPlayer === 'user') {
+        //If Player hits an already hit tile, then go again
+        if (classListObj.includes('missed') || classListObj.includes('hit')) {
+            infoDisplay.textContent = 'Invalid bomb placement! Try a different tile.'
+            return
+        }
+        //If player hits a ship then add hit class to tile selected, check score and go again
+        else if (classListObj.includes('taken')) {
+            console.log('here')
+            enemyTile.classList.add('hit')
+            enemyTile.style.backgroundColor = 'red'
+            infoDisplay.textContent = 'That is a hit! Go Again!'
+
+            //Get the name of the ship hit
+            let classes = Array.from(classListObj)
+            classes = classes.filter(className => !classToFilterOut.includes(className))
+            playerHits.push(...classes)
+            enemyTile.classList.add(...classes) //Add the ship class of enemy's board to client side
+
+            checkScoreCondition(playerHits, 'player')
+            hitCountPlayer += 1
+            displayHitMissStatus('player')
+
+            idicateDownedShips('player')
+            return
+        }
+        //If player misses, keep track of selected tile
+        else if (!classListObj.includes('taken')) {
+            infoDisplay.textContent = 'You missed this time'
+            enemyTile.classList.add('missed')
+            enemyTile.style.backgroundColor = 'white'
+            missCountPlayer += 1
+            displayHitMissStatus('player') //Update computer score accordingly
+        }
+        playerTurn = false
+        currentPlayer = 'enemy'
+        // const compBoardTiles = document.querySelectorAll('#computer div')
+        // compBoardTiles.forEach(tile => tile.replaceWith(tile.cloneNode(true))) //Remove event listener
+    }
+}
+
 //Handle Player's turn
 function playerClick(e) {
     if (!gameOver) {
@@ -621,6 +744,59 @@ function playerClick(e) {
     }
 }
 
+function enemyTurn(computerAttack) {
+    if (!gameOver) {
+        const playerBoardTiles = document.querySelectorAll('#player div')
+
+        //If enemy hits a battleship then add hit class to tile, check score and go again
+        if (playerBoardTiles[computerAttack].classList.contains('taken') &&
+            !playerBoardTiles[computerAttack].classList.contains('hit')) {
+            playerBoardTiles[computerAttack].classList.add('hit')
+            playerBoardTiles[computerAttack].style.backgroundColor = 'red'
+            infoDisplay.textContent = 'Your ship has been hit!'
+
+            //Get the name of the ship hit
+            let classes = Array.from(playerBoardTiles[computerAttack].classList)
+            classes = classes.filter(className => !classToFilterOut.includes(className))
+            computerHits.push(...classes)
+
+            checkScoreCondition(computerHits, 'computer')
+            hitCountComputer += 1
+            displayHitMissStatus('computer')
+
+            idicateDownedShips('computer')
+            return
+
+        }
+        //if computer misses keep track of tile selected
+        else if (!playerBoardTiles[computerAttack].classList.contains('taken')) {
+            infoDisplay.textContent = 'The enemy missed! Your turn!'
+            playerBoardTiles[computerAttack].classList.add('missed')
+            missCountComputer += 1
+            displayHitMissStatus('computer') //Update player score accordingly
+        }
+
+
+
+        playerTurn = true
+        turnDisplay.textContent = ''
+        currentPlayer = 'user'
+        // const compBoardTiles = document.querySelectorAll('#computer div')
+        // compBoardTiles.forEach(tile => {
+        //     tile.addEventListener('click', () => {
+        //         if (ready && enemyReady) {
+        //             shotFired = parseInt(tile.id) //position of tile fired
+        //             const fired = JSON.stringify({
+        //                 event: 'fire',
+        //                 payload: tile.id
+        //             });
+        //             socket.send(fired) //Send position of where we fired at
+        //         }
+        //     })
+        // })
+
+    }
+}
 
 //Handle Computer's turn
 let gridNumberIndex = Array.from(Array(100).keys())
