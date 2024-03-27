@@ -72,10 +72,11 @@ function startMultiPlayer() {
                     if (playerNum === 1) currentPlayer = "enemy";
 
                     infoDisplay.innerHTML = 'Joined server!';
+
                     //remove unnecessary buttons
                     singlePlayerButton.classList.add('invisible')
                     multiplayerButton.classList.add('invisible')
-                    scoreBoard.classList.add('invisible')
+
 
                     //Get other player status
                     const checkOtherUsers = JSON.stringify({
@@ -120,7 +121,7 @@ function startMultiPlayer() {
                     event: 'fire-reply',
                     payload: tileAttacked.classList
                 });
-                console.log(tileAttacked)
+
                 enemyTurn(parseInt(data.payload)) //Update my board
                 socket.send(tileClasses)
                 startMultiPlayerGame(socket) //Switch turn
@@ -172,15 +173,6 @@ function startMultiPlayer() {
                 }
             })
         })
-
-        // socket.addEventListener('message', (event) => {
-        //     console.log('here')
-        //     const data = JSON.parse(event.data);
-        //     if (data.event === 'player-connection') {
-        //         const num = data.payload;
-        //         console.log('Player number', num, 'has joined')
-        //     }
-        // })
     }
 }
 
@@ -224,6 +216,21 @@ function startSinglePlayer() {
         })
 
         startBttn.addEventListener('click', startSinglePlayerGame)
+    }
+}
+
+//Logic for Single Player
+function startSinglePlayerGame() {
+    if (!gameStart) {
+        if (shipsContainer.children.length != 0) {
+            infoDisplay.textContent = 'Drop down your battleships!!'
+        } else {
+            const compBoardTiles = document.querySelectorAll('#computer div')
+            compBoardTiles.forEach(tile => tile.addEventListener('click', playerClick))
+            infoDisplay.textContent = 'Begin!'
+            turnDisplay.textContent = "Your turn!"
+            gameStart = true
+        }
     }
 }
 
@@ -607,22 +614,6 @@ function playerReady(num) {
     }
 }
 
-
-//Logic for Single Player
-function startSinglePlayerGame() {
-    if (!gameStart) {
-        if (shipsContainer.children.length != 0) {
-            infoDisplay.textContent = 'Drop down your battleships!!'
-        } else {
-            const compBoardTiles = document.querySelectorAll('#computer div')
-            compBoardTiles.forEach(tile => tile.addEventListener('click', playerClick))
-            infoDisplay.textContent = 'Begin!'
-            turnDisplay.textContent = "Your turn!"
-            gameStart = true
-        }
-    }
-}
-
 //Player's attacks counter
 let hitCountPlayer = 0
 let missCountPlayer = 0
@@ -652,12 +643,10 @@ const classToFilterOut = ['taken', 'hit', 'tile']
 function userTurn(prividedClassList) {
     //Use provided classList to check for conditions
     const classListObj = Object.values(prividedClassList)
-    console.log(classListObj)
 
     //Get the tile that is was attacked by user in current client
     const computerBoard = document.querySelectorAll('#computer div')
     const enemyTile = computerBoard[shotFired]
-    console.log(enemyTile)
 
     if (!gameOver && currentPlayer === 'user') {
         //If Player hits an already hit tile, then go again
@@ -667,7 +656,6 @@ function userTurn(prividedClassList) {
         }
         //If player hits a ship then add hit class to tile selected, check score and go again
         else if (classListObj.includes('taken')) {
-            console.log('here')
             enemyTile.classList.add('hit')
             enemyTile.style.backgroundColor = 'red'
             infoDisplay.textContent = 'That is a hit! Go Again!'
@@ -679,6 +667,7 @@ function userTurn(prividedClassList) {
             enemyTile.classList.add(...classes) //Add the ship class of enemy's board to client side
 
             checkScoreCondition(playerHits, 'player')
+            displayScore('computer') //Update enemy score accordingly
             hitCountPlayer += 1
             displayHitMissStatus('player')
 
@@ -695,8 +684,6 @@ function userTurn(prividedClassList) {
         }
         playerTurn = false
         currentPlayer = 'enemy'
-        // const compBoardTiles = document.querySelectorAll('#computer div')
-        // compBoardTiles.forEach(tile => tile.replaceWith(tile.cloneNode(true))) //Remove event listener
     }
 }
 
@@ -761,6 +748,7 @@ function enemyTurn(computerAttack) {
             computerHits.push(...classes)
 
             checkScoreCondition(computerHits, 'computer')
+            displayScore('player') //Update player score accordingly
             hitCountComputer += 1
             displayHitMissStatus('computer')
 
@@ -781,20 +769,6 @@ function enemyTurn(computerAttack) {
         playerTurn = true
         turnDisplay.textContent = ''
         currentPlayer = 'user'
-        // const compBoardTiles = document.querySelectorAll('#computer div')
-        // compBoardTiles.forEach(tile => {
-        //     tile.addEventListener('click', () => {
-        //         if (ready && enemyReady) {
-        //             shotFired = parseInt(tile.id) //position of tile fired
-        //             const fired = JSON.stringify({
-        //                 event: 'fire',
-        //                 payload: tile.id
-        //             });
-        //             socket.send(fired) //Send position of where we fired at
-        //         }
-        //     })
-        // })
-
     }
 }
 
