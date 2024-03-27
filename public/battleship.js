@@ -157,6 +157,7 @@ function startMultiPlayer() {
             //Show indicator, which player we are
             if (parseInt(num) === playerNum) {
                 player.querySelector('.connected').style.fontWeight = 'bold'
+                player.style.fontWeight = 'bold'
             }
         }
 
@@ -232,10 +233,10 @@ function startMultiPlayerGame(socket) {
 
         if (enemyReady) {
             if (currentPlayer === 'user') {
-                turnDisplay.innerHTML = 'Your Turn'
+                infoDisplay.innerHTML = 'Your Turn'
             }
             if (currentPlayer === 'enemy') {
-                turnDisplay.innerHTML = 'Enemy Turn'
+                infoDisplay.innerHTML = 'Enemy Turn'
             }
             gameStart = true
         }
@@ -507,6 +508,9 @@ function resetGame() {
         player2.querySelector('.connected').style.fontWeight = 'normal'
         player2.querySelector('.ready').style.fontWeight = 'normal'
 
+        player1.style.fontWeight = 'normal'
+        player2.style.fontWeight = 'normal'
+
     }
     //Reset all related variables
     gameMode = ''
@@ -639,7 +643,7 @@ function checkScoreCondition(userHits, user) {
         if (userHits.filter(shipHit => shipHit === ship.name).length === ship.length) {
             //remove the ship in the userHit array and add that ship to the downedShips array
             if (user === 'player') {
-                infoDisplay.textContent = "You have downed the enemy's " + ship.alias
+                infoDisplay.textContent = "You have downed the enemy's " + ship.alias + ". Again!"
                 initialCountShipsComputer[ship.alias] -= 1
                 playerDownedShips.push(ship.name)
                 playerHits = userHits.filter(shipHit => shipHit !== ship.name)
