@@ -59,15 +59,12 @@ wss.on('connection', function connection(ws) {
                 client.send(playerDisconnect);
             }
         });
-        console.log(connections)
     })
 
     //Handle messages recieved
     //Handle on Ready player
     ws.on('message', function message(data) {
         const mssg = JSON.parse(data)
-
-        console.log(mssg.event)
 
         if (mssg.event === 'player-ready') {
             const playerReady = JSON.stringify({
